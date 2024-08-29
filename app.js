@@ -71,6 +71,7 @@ app.use(express.json());
 						//res.status(200).send();
 						//res.sendFile(__dirname + '/img/' + img_uuid + '.png');
 						res.status(200).send({
+							"source_html":  req.body.html,
 							"img_url": req.protocol + '://' + req.get('host') + '/img/' + img_uuid + '.png'
 						});
 
