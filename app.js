@@ -32,19 +32,19 @@ app.use(express.json());
 						`<style>
 							${req.body.css}
 						</style>
-						<div style="height: fit-content;width: fit-content">
+						<div id="container">
 							${req.body.html}
 						</div>`
 					);
 					// define content area to take screenshot
-					const content = await page.$('div');
+					const content = await page.$('#container');
 					// take screenshot in content area, save buffer
 					const buffer = await content.screenshot({ type: 'png' });
-					const buffer_2 = await page.screenshot({path: 'test.png', fullPage: true});
+					//const buffer_2 = await page.screenshot({path: 'test.png', fullPage: true});
 					// close browser page
 					await page.close();
 					// send back base64 string of image
-					res.status(200).send('data:image/png;base64,' + buffer_2.toString('base64'));
+					res.status(200).send('data:image/png;base64,' + buffer.toString('base64'));
 				})();
 			} else {
 				// if fields missing
