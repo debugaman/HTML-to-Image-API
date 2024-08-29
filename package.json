@@ -13,7 +13,9 @@
 	"dependencies": {
 		"dotenv": "^8.2.0",
 		"express": "^4.17.1",
-		"puppeteer": "^5.2.1"
+		"puppeteer": "^5.2.1",
+		"puppeteer-full-page-screenshot": "^1.2.2",
+		"uuid": "^10.0.0"
 	},
 	"devDependencies": {
 		"nodemon": "^2.0.4"
