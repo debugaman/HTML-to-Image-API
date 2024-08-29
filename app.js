@@ -9,11 +9,11 @@ const app = express();
 // setup boilerplate
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-
+adasdsad
 // initialize puppeteer function
 (async () => {
 	// launch headless browser
-	const browser = await puppeteer.launch({ headless: true, args: [ '--no-sandbox' ] });
+	const browser = await puppeteer.launch({ headless: true, args: [ '--no-sandbox', '--window-size=2200,1200' ] });
 
 	// post request is made to render
 	app.post('/render', (req, res) => {
@@ -25,6 +25,8 @@ app.use(express.json());
 				(async () => {
 					// open new browser page
 					const page = await browser.newPage();
+
+					await page.setViewport({width: 1280, height: 1200});
 					// fill content with user submitted html and css
 					await page.setContent(
 						`<style>
