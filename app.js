@@ -1,8 +1,29 @@
 // require modules
 require('dotenv').config();
 const uuid = require('uuid');
+const path = require('path');
+const axios = require("axios");
+
+const mimeTypes = {
+	'.html': 'text/html',
+	'.js': 'application/javascript',
+	'.json': 'application/json',
+	'.css': 'text/css',
+	'.png': 'image/png',
+	'.jpg': 'image/jpeg',
+	'.jpeg': 'image/jpeg',
+	'.gif': 'image/gif',
+	'.txt': 'text/plain',
+	// Add more mappings as needed
+};
 
 const express = require('express');
+
+const { S3Client, GetObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
+
+var https = require('follow-redirects').https;
+
 const puppeteer = require('puppeteer');
 const fullPageScreenshot = require('puppeteer-full-page-screenshot').default;
 
@@ -28,7 +49,7 @@ app.use(express.json());
 
 						// open new browser page
 						const page = await browser.newPage();
-						
+
 						/*
 						var request = {
 							"html": "<div id='main'><div class='photo flow'></div><div class='brand flow'><div class='text'>成功建立房地產團隊的關鍵步驟</div></div></div>",
@@ -65,13 +86,17 @@ app.use(express.json());
 
 						await browser.close();
 
+						var aws_s3_url = await upload_s3(__dirname + '/img/' + img_uuid + '.png', img_uuid + '.png');
+						//uploadFile(__dirname + '/img/' + img_uuid + '.png', img_uuid + '.png', "aacms");
+
 						// send back base64 string of image
 						var base64str = 'data:image/png;base64,' + base64_encode('img/' + img_uuid + '.png');
 						//console.log(base64str);
 						//res.status(200).send();
 						//res.sendFile(__dirname + '/img/' + img_uuid + '.png');
 						res.status(200).send({
-							"source_html":  req.body.html,
+							"source_html": req.body.html,
+							"aws_s3_url": "https://aacms.s3.ap-southeast-1.amazonaws.com/" + img_uuid + '.png',
 							"img_url": req.protocol + '://' + req.get('host') + '/img/' + img_uuid + '.png'
 						});
 
@@ -94,7 +119,7 @@ app.use(express.json());
 	app.get('/img/:imageName', (req, res) => {
 		const imageName = req.params.imageName;
 		const imagePath = __dirname + `/img/${imageName}`; // Replace with the actual path
-	
+
 		res.sendFile(imagePath);
 	});
 
@@ -102,11 +127,64 @@ app.use(express.json());
 	function base64_encode(file) {
 		var fs = require('fs');
 		return fs.readFileSync(file, 'base64');
-		//return Buffer.from(file, 'binary').toString('base64');;
-		// read binary data
-		//var bitmap = fs.readFileSync(file);
-		// convert binary data to base64 encoded string
-		//return new Buffer(bitmap).toString('base64');
+	}
+
+	async function upload_s3(file_path, file_name) {
+		// Configure AWS SDK V3
+		const s3Client = new S3Client({
+			region: 'ap-southeast-1', // Change to your desired region
+			credentials: {
+				accessKeyId: "{{accessKeyId}}",
+				secretAccessKey: "{{secretAccessKey}}",
+			},
+		});
+
+		try {
+			const params = {
+				Bucket: 'aacms', // Your S3 bucket name
+				Key: file_name, // Replace with your desired object key
+				ACL: 'public-read', // Set object to public-read
+			};
+
+			// Generate pre-signed URL for PUT operation
+			const command = new PutObjectCommand(params);
+			const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 });
+
+			var fs = require('fs');
+
+			let data = fs.readFileSync(file_path);
+
+			let config = {
+				method: 'put',
+				maxBodyLength: Infinity,
+				url: signedUrl,
+				headers: {
+					'Content-Type': 'text/plain'
+				},
+				data: data
+			};
+
+			axios.request(config)
+				.then((response) => {
+					console.log(JSON.stringify(response.data));
+					fs.unlink(file_path, (err) => {
+						if (err) {
+						  console.error("Failed to delete file", err);
+						} else {
+						  console.log("File deleted successfully");
+						}
+					  });
+				})
+				.catch((error) => {
+					console.log(error);
+				});
+
+
+
+			return "https://aacms.s3.ap-southeast-1.amazonaws.com/" + file_name;
+		} catch (error) {
+			console.error('Error generating pre-signed URL:', error);
+		}
 	}
 })();
 
