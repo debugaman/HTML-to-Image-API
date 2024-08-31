@@ -62,6 +62,7 @@ app.use(express.json());
 
 						var aws_s3_url = await upload_s3(__dirname + '/img/' + img_uuid + '.png', img_uuid + '.png');
 						res.status(200).send({
+							"img_id": img_uuid,
 							"aws_s3_url": aws_s3_url						
 						});
 
