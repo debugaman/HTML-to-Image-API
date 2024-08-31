@@ -51,7 +51,7 @@ app.use(express.json());
 						);
 						
 						var img_uuid = uuid.v4();
-						if(req.body.img_id){
+						if(req.body.img_id && req.body.img_id.length > 0){
 							img_uuid = req.body.img_id;
 						}
 
